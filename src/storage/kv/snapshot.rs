@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ops::RangeBounds, sync::Arc};
 
 use bytes::Bytes;
 
@@ -9,7 +9,9 @@ use crate::storage::{
 };
 
 use vart::{
-    iter::IterationPointer, snapshot::Snapshot as TartSnapshot, TrieError, VariableSizeKey,
+    iter::{Iter, VersionedIter},
+    snapshot::Snapshot as TartSnapshot,
+    TrieError, VariableSizeKey,
 };
 
 pub(crate) const FILTERS: [fn(&ValueRef, u64) -> Result<()>; 1] = [ignore_deleted];
@@ -84,8 +86,22 @@ impl Snapshot {
         Ok(Box::new(val_ref))
     }
 
-    pub fn new_reader(&mut self) -> Result<IterationPointer<VariableSizeKey, Bytes>> {
-        Ok(self.snap.new_reader()?)
+    pub fn iter<'a>(&'a self) -> Iter<'a, VariableSizeKey, Bytes> {
+        self.snap.iter()
+    }
+
+    pub fn versioned_iter<'a>(&'a self) -> VersionedIter<'a, VariableSizeKey, Bytes> {
+        self.snap.iter_with_versions()
+    }
+
+    pub fn range<'a, R>(
+        &'a self,
+        range: R,
+    ) -> impl Iterator<Item = (Vec<u8>, &'a Bytes, &'a u64, &'a u64)>
+    where
+        R: RangeBounds<VariableSizeKey> + 'a,
+    {
+        self.snap.range(range)
     }
 }
 
@@ -111,3 +127,4 @@ where
         self(val_ref, ts)
     }
 }
+

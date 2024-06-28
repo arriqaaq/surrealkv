@@ -94,13 +94,13 @@ impl StoreInner {
 
         // Start compaction process
         let snapshot_lock = self.core.indexer.write();
-        let mut snapshot = snapshot_lock.snapshot()?;
-        let snapshot_iter = snapshot.new_reader()?;
+        let snapshot = snapshot_lock.snapshot()?;
+        let snapshot_iter = snapshot.iter();
         drop(snapshot_lock); // Explicitly drop the lock
         drop(oracle_lock); // Release the oracle lock
 
         // Do compaction and write
-        for (key, value, version, ts) in snapshot_iter.iter() {
+        for (key, value, version, ts) in snapshot_iter {
             let mut val_ref = ValueRef::new(self.core.clone());
             val_ref.decode(*version, value)?;
 

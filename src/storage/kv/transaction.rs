@@ -88,7 +88,7 @@ pub struct Transaction {
     pub(crate) read_ts: u64,
 
     /// `mode` is the transaction mode. This can be either `ReadWrite`, `ReadOnly`, or `WriteOnly`.
-    mode: Mode,
+    pub(crate) mode: Mode,
 
     /// `snapshot` is the snapshot that the transaction is running in. This is a consistent view of the data at the time the transaction started.
     pub(crate) snapshot: Option<RwLock<Snapshot>>,
@@ -337,14 +337,15 @@ impl Transaction {
         let mut results = Vec::new();
 
         // Create a new reader for the snapshot.
-        let iterator = match self.snapshot.as_ref().unwrap().write().new_reader() {
-            Ok(reader) => reader,
-            Err(Error::IndexError(TrieError::SnapshotEmpty)) => return Ok(Vec::new()),
-            Err(e) => return Err(e),
-        };
+        // let iterator = match self.snapshot.as_ref().unwrap().write().new_reader() {
+        //     Ok(reader) => reader,
+        //     Err(Error::IndexError(TrieError::SnapshotEmpty)) => return Ok(Vec::new()),
+        //     Err(e) => return Err(e),
+        // };
+        let snap = self.snapshot.as_ref().unwrap().read();
 
         // Get a range iterator for the specified range.
-        let ranger = iterator.range(range);
+        let ranger = snap.range(range);
 
         // Iterate over the keys in the range.
         'outer: for (key, value, version, ts) in ranger {
